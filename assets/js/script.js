@@ -223,7 +223,7 @@ function init() {
 
     var initQuizP = document.createElement("p")
     initQuizP.textContent = `There are ${quiz.total()} questions.
-    You have ${quiz.total() * 20} seconds to commplete this quiz.
+    You have ${quiz.total() * 20} seconds to complete this quiz.
     Press the button below to start the quiz.`
 
     var initQuizBtn = document.createElement("button")
