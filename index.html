@@ -9,7 +9,7 @@
     </head>
     <body>
         <header>
-            <span id="highscores">View Highscores</span>
+            <span id="highscores-button">View Highscores</span>
             <span id="time"
                 ><!-- This will be the injection point for the timer --></span
             >
@@ -17,6 +17,24 @@
         <section>
             <div id="quiz">
                 <!-- This will be the injection point for the quiz content-->
+            </div>
+            <div id="highscores" class="hidden">
+                <h1>Highscores</h1>
+                <div id="scoreboard" class="scores"></div>
+                <button id="clear" class="hidden">Clear Scores</button>
+                <form id="score-form">
+                    <label for="initals">Initals</label>
+                    <input
+                        type="text"
+                        id="initials"
+                        name="initals"
+                        placeholder="Enter Your Initals"
+                    />
+                    <label for="score">Score</label>
+                    <input type="text" id="score" name="score" disabled />
+                    <input type="submit" id="submit" value="Submit" />
+                </form>
+                <button id="back">Go Back</button>
             </div>
         </section>
     </body>
