@@ -1,3 +1,4 @@
+//Setting Global Element Selectors
 var quizEl = document.querySelector("#quiz")
 var highscoresEl = document.querySelector("#highscores")
 var highscoresBtn = document.querySelector("#highscores-button")
@@ -7,26 +8,33 @@ var startBtn = document.querySelector("#start")
 var clearBtn = document.querySelector("#clear")
 var backBtn = document.querySelector("#back")
 
+//Global TimerID and Timer Counter
 var timerId = 0
 var timeLeft = 0
 
+//Get and Store any HighScores in the browsers localStorage.
 var storedScores = localStorage.getItem("highscore") || "[]"
 
+//The Quiz Object for tracking the game
 var quiz = {
     questions: [
         "What object type represents the users browser?",
         "Which symbols defind an object?",
+        "__ is a Conditional Statement",
+        "what does parseInt() return",
     ],
     options: [
-        ["window", "array", "number", "string"],
+        ["Window", "Array", "Number", "String"],
         [
             "Squre brackets",
             "Curly brackets",
             "Rounded Brackets",
             "Quotation Marks",
         ],
+        ["Boolean", "Function", "If", "DOM"],
+        ["Object", "Number", "Array", "JSON"],
     ],
-    answers: ["window", "Curly brackets"],
+    answers: ["Window", "Curly brackets", "If", "Number"],
     current: 0,
     answered: 0,
     incorrect: 0,
@@ -41,6 +49,7 @@ var quiz = {
     },
 }
 
+//the function used to setup the setInterval countdown
 function startTimer(seconds) {
     timeLeft = seconds
 
@@ -58,12 +67,17 @@ function startTimer(seconds) {
     }, 1000)
 }
 
+//the function used to stop the setInterval countdown
 function stopTimer() {
     clearInterval(timerId)
     timeLeft = 0
     timeEl.textContent = ""
 }
 
+/*
+Function used to generate the next question.
+A Property from the Quiz object is injected as the index
+*/
 function getQuestion(index) {
     var quizQuestion = document.createElement("h1")
     quizEl.textContent = ""
@@ -75,6 +89,10 @@ function getQuestion(index) {
         quizQuestion.textContent = quiz.questions[quiz.current]
         quizEl.appendChild(quizQuestion)
 
+        /*
+        This for loop creates the buttons needed for the answers.
+        This does mean it is possible to cheat if the source code is looked at
+        */
         for (var i = 0; i < quiz.options[index].length; i++) {
             var quizBtn = document.createElement("button")
             var options = quiz.options[index][i]
@@ -91,6 +109,10 @@ function getQuestion(index) {
     }
 }
 
+/*
+The function is used to generate the Scoreboard when View Highscores is clicked
+Or when the game is over, either via timeout or answering all questions
+*/
 function scoreTable() {
     var scoreEl = document.querySelector("#scoreboard")
     var scoreSpanHeader1 = document.createElement("span")
@@ -136,11 +158,15 @@ function scoreTable() {
     })
 }
 
+//this function shows the form to add a name to scoreboard
 function scoreForm() {
     var initialInput = document.querySelector("#initials")
     var scoreInput = document.querySelector("#score")
     var scoreSubmit = document.querySelector("#submit")
-    var playerScore = quiz.score()
+    var playerScore = 0
+
+    //The Score is added as a percentage of correct answers plus a bonus for speed
+    playerScore = quiz.score() + timeLeft
 
     var result = {
         initials: "",
@@ -151,6 +177,8 @@ function scoreForm() {
     quizEl.setAttribute("class", "hidden")
     if (formEl.getAttribute("class") === "hidden") {
         formEl.removeAttribute("class")
+        initialInput.removeAttribute("class")
+        initialInput.removeAttribute("placeholder")
         highscoresBtn.setAttribute("class", "hidden")
     }
 
@@ -158,6 +186,7 @@ function scoreForm() {
     scoreInput.value = playerScore
     scoreSubmit.addEventListener("click", (event) => {
         event.preventDefault()
+        //there is an unidentifed bubble here. This is the likely prevention
         event.stopImmediatePropagation()
         if (
             initialInput.value.trim() === "" ||
@@ -167,16 +196,19 @@ function scoreForm() {
             initialInput.setAttribute("placeholder", "Invalid input")
         } else {
             result.initials = initialInput.value.trim()
-            result.score = quiz.score()
+            result.score = quiz.score() + timeLeft
             var hiscores = [...JSON.parse(storedScores), result]
             localStorage.setItem("highscore", JSON.stringify(hiscores))
             storedScores = localStorage.getItem("highscore")
+            formEl.setAttribute("class", "hidden")
+
+            initialInput.setAttribute("placeholder", "Invalid input")
             scoreTable()
         }
-        formEl.setAttribute("class", "hidden")
     })
 }
 
+//This functions generates the first page before the quiz is started
 function init() {
     if (quizEl.getAttribute("class") === "hidden") {
         quizEl.removeAttribute("class")
@@ -190,7 +222,9 @@ function init() {
     initQuizH1.textContent = "Code Quiz"
 
     var initQuizP = document.createElement("p")
-    initQuizP.textContent = "Press the button below to start the quiz"
+    initQuizP.textContent = `There are ${quiz.total()} questions.
+    You have ${quiz.total() * 20} seconds to commplete this quiz.
+    Press the button below to start the quiz.`
 
     var initQuizBtn = document.createElement("button")
     initQuizBtn.setAttribute("id", "start")
@@ -204,11 +238,12 @@ function init() {
 
     startBtn.addEventListener("click", (_event) => {
         _event.preventDefault()
-        startTimer(30)
+        startTimer(quiz.total() * 20)
         getQuestion(quiz.current)
     })
 }
 
+//this event will trigger when clicking "View Highscores" the to top left
 highscoresBtn.addEventListener("click", () => {
     quizEl.setAttribute("class", "hidden")
     formEl.setAttribute("class", "hidden")
@@ -217,6 +252,9 @@ highscoresBtn.addEventListener("click", () => {
     scoreTable()
 })
 
+/*
+this event controls how the answer button work when they are generated
+*/
 quizEl.addEventListener("click", function (event) {
     var isCorrect = document.createElement("em")
     isCorrect.textContent = ""
@@ -225,6 +263,7 @@ quizEl.addEventListener("click", function (event) {
     event.stopPropagation()
     var element = event.target
 
+    //this checks to confirm that is was an answer button that triggered.
     if (element.localName === "button" && element.hasAttribute("data-answer")) {
         quiz.current++
         quiz.answered++
