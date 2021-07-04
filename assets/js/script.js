@@ -20,7 +20,7 @@ var quiz = {
     questions: [
         "What object type represents the users browser?",
         "Which symbols defind an object?",
-        "__ is a Conditional Statement",
+        "__ is the start of a Conditional Statement",
         "what does parseInt() return",
     ],
     options: [
@@ -36,20 +36,23 @@ var quiz = {
     ],
     answers: ["Window", "Curly brackets", "If", "Number"],
     current: 0,
-    answered: 0,
     incorrect: 0,
+    timeRemaining: 0,
     total: function () {
         return this.questions.length
     },
     score: function () {
-        if (this.answered === 0) {
+        if (this.current === 0) {
             this.incorrect = this.total()
         }
-        return ((this.total() - this.incorrect) / this.total()) * 100
+        return (
+            ((this.total() - this.incorrect) / this.total()) * 100 +
+            this.timeRemaining
+        )
     },
 }
 
-//the function used to setup the setInterval countdown
+//The function used to setup the setInterval countdown
 function startTimer(seconds) {
     timeLeft = seconds
 
@@ -67,9 +70,10 @@ function startTimer(seconds) {
     }, 1000)
 }
 
-//the function used to stop the setInterval countdown
+//The function used to stop the setInterval countdown
 function stopTimer() {
     clearInterval(timerId)
+    quiz.timeRemaining = timeLeft
     timeLeft = 0
     timeEl.textContent = ""
 }
@@ -82,11 +86,11 @@ function getQuestion(index) {
     var quizQuestion = document.createElement("h1")
     quizEl.textContent = ""
 
-    if (!quiz.questions[quiz.current]) {
+    if (!quiz.questions[index]) {
         stopTimer()
         scoreForm()
     } else {
-        quizQuestion.textContent = quiz.questions[quiz.current]
+        quizQuestion.textContent = quiz.questions[index]
         quizEl.appendChild(quizQuestion)
 
         /*
@@ -158,7 +162,7 @@ function scoreTable() {
     })
 }
 
-//this function shows the form to add a name to scoreboard
+//This function shows the form to add a name to scoreboard
 function scoreForm() {
     var initialInput = document.querySelector("#initials")
     var scoreInput = document.querySelector("#score")
@@ -166,7 +170,7 @@ function scoreForm() {
     var playerScore = 0
 
     //The Score is added as a percentage of correct answers plus a bonus for speed
-    playerScore = quiz.score() + timeLeft
+    playerScore = quiz.score()
 
     var result = {
         initials: "",
@@ -186,7 +190,8 @@ function scoreForm() {
     scoreInput.value = playerScore
     scoreSubmit.addEventListener("click", (event) => {
         event.preventDefault()
-        //there is an unidentifed bubble here. This is the likely prevention
+        /* There is an unidentifed "bubble" here. Sometimes triggering this twice. 
+        This appear to be the a likely prevention */
         event.stopImmediatePropagation()
         if (
             initialInput.value.trim() === "" ||
@@ -208,13 +213,60 @@ function scoreForm() {
     })
 }
 
+function stateAnswer(answer) {
+    var isCorrect = document.createElement("em")
+    var displayTimer
+    var count = 3
+    isCorrect.textContent = ""
+    quizEl.appendChild(isCorrect)
+
+    displayTimer = setInterval(function () {
+        if (count === 0) {
+            clearInterval(displayTimer)
+            quizEl.lastChild.remove()
+            getQuestion(quiz.current)
+        } else {
+            isCorrect.textContent = answer
+            count--
+        }
+    }, 300)
+}
+
+//This event will trigger when clicking "View Highscores" the to top left
+highscoresBtn.addEventListener("click", () => {
+    quizEl.setAttribute("class", "hidden")
+    formEl.setAttribute("class", "hidden")
+    highscoresBtn.setAttribute("class", "hidden")
+    clearBtn.removeAttribute("class", "hidden")
+    scoreTable()
+})
+
+/*
+This event controls how the answer button work when they are generated
+*/
+quizEl.addEventListener("click", function (event) {
+    var element = event.target
+
+    //This checks to confirm that is was an answer button that triggered.
+    if (element.localName === "button" && element.hasAttribute("data-answer")) {
+        quiz.current++
+        var answer = element.getAttribute("data-answer")
+        if (answer === "yes") {
+            stateAnswer("Correct")
+        } else if (answer === "no") {
+            quiz.incorrect++
+            timeLeft -= 10
+            stateAnswer("wrong")
+        }
+    }
+})
+
 //This functions generates the first page before the quiz is started
 function init() {
     if (quizEl.getAttribute("class") === "hidden") {
         quizEl.removeAttribute("class")
     }
     quizEl.textContent = ""
-    quiz.answered = 0
     quiz.current = 0
     quiz.incorrect = 0
 
@@ -223,7 +275,10 @@ function init() {
 
     var initQuizP = document.createElement("p")
     initQuizP.textContent = `There are ${quiz.total()} questions.
-    You have ${quiz.total() * 20} seconds to complete this quiz.
+    You have ${quiz.total() * 15} seconds to complete this quiz.
+    A wrong answer will deduct 10 seconds from your time.
+    Your score is based on the percentage correct, plus a time bonus
+
     Press the button below to start the quiz.`
 
     var initQuizBtn = document.createElement("button")
@@ -238,46 +293,9 @@ function init() {
 
     startBtn.addEventListener("click", (_event) => {
         _event.preventDefault()
-        startTimer(quiz.total() * 20)
+        startTimer(quiz.total() * 15)
         getQuestion(quiz.current)
     })
 }
-
-//this event will trigger when clicking "View Highscores" the to top left
-highscoresBtn.addEventListener("click", () => {
-    quizEl.setAttribute("class", "hidden")
-    formEl.setAttribute("class", "hidden")
-    highscoresBtn.setAttribute("class", "hidden")
-    clearBtn.removeAttribute("class", "hidden")
-    scoreTable()
-})
-
-/*
-this event controls how the answer button work when they are generated
-*/
-quizEl.addEventListener("click", function (event) {
-    var isCorrect = document.createElement("em")
-    isCorrect.textContent = ""
-    quizEl.appendChild(isCorrect)
-
-    event.stopPropagation()
-    var element = event.target
-
-    //this checks to confirm that is was an answer button that triggered.
-    if (element.localName === "button" && element.hasAttribute("data-answer")) {
-        quiz.current++
-        quiz.answered++
-        var answer = element.getAttribute("data-answer")
-        if (answer === "yes") {
-            isCorrect.textContent = "Correct"
-            getQuestion(quiz.current)
-        } else if (answer === "no") {
-            quiz.incorrect++
-            timeLeft -= 5
-            isCorrect.textContent = "wrong"
-            getQuestion(quiz.current)
-        }
-    }
-})
 
 init()
